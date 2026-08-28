@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "teleoperate-rs"
+version = "0.1.0"
+description = "Minimal B601-RS teleop / record / play demo (motorbridge RS + PyPI 102)"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "numpy>=1.24",
+  "lerobot>=0.4",
+  "lerobot-teleoperator-rebot-arm-102>=1.0.1",
+  "motorbridge>=0.4.4",
+  "meshcat",
+  "pyyaml",
+]
+
+[project.scripts]
+teleoperate-rs = "teleoperate_rs.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["teleoperate_rs*"]

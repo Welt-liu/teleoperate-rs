@@ -1,0 +1,14 @@
+name: teleoperate-rs
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pip
+  - numpy
+  - pinocchio
+  - pip:
+      - lerobot>=0.4
+      - lerobot-teleoperator-rebot-arm-102>=1.0.1
+      - motorbridge>=0.4.4
+      - meshcat
+      - pyyaml
