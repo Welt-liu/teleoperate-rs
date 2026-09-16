@@ -121,6 +121,21 @@ def add_teleop_flags(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def add_meshcat_flag(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--meshcat",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="浏览器 MeshCat 显示 URDF（默认开）",
+    )
+
+
+def add_gravity_flags(parser: argparse.ArgumentParser) -> None:
+    add_common_flags(parser)
+    add_leader_flags(parser)
+    add_meshcat_flag(parser)
+
+
 def add_record_flags(parser: argparse.ArgumentParser) -> None:
     add_common_flags(parser)
     add_leader_flags(parser)
@@ -143,12 +158,7 @@ def add_record_flags(parser: argparse.ArgumentParser) -> None:
         default=True,
         help="RS leader 使用 demo9 MIT + Pinocchio g(q)（默认开；102 忽略）",
     )
-    parser.add_argument(
-        "--meshcat",
-        action=argparse.BooleanOptionalAction,
-        default=True,
-        help="浏览器 MeshCat 显示 URDF（默认开）",
-    )
+    add_meshcat_flag(parser)
 
 
 def add_play_flags(parser: argparse.ArgumentParser) -> None:
@@ -172,12 +182,7 @@ def add_play_flags(parser: argparse.ArgumentParser) -> None:
         default=DEFAULT_APPROACH_DURATION_S,
         help=f"每圈开始前过渡到起点的秒数（默认 {DEFAULT_APPROACH_DURATION_S:g}）",
     )
-    parser.add_argument(
-        "--meshcat",
-        action=argparse.BooleanOptionalAction,
-        default=True,
-        help="浏览器 MeshCat 显示 URDF（默认开）",
-    )
+    add_meshcat_flag(parser)
 
 
 def default_leader_port(leader_type: str, explicit: str | None) -> str:

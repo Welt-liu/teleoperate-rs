@@ -1,6 +1,6 @@
 # teleoperate-rs
 
-B601-RS 最简 demo：双臂遥操作、单臂录制、单臂循环回放。不依赖 Isaac Sim。
+B601-RS 最简 demo：双臂遥操作、单臂重力补偿、单臂录制、单臂循环回放。不依赖 Isaac Sim。
 
 RS 臂走 **motorbridge**；录制时 RS leader 额外用 **reBotArm_control_py demo 9** 的 MIT + Pinocchio `g(q)`。只有 **102 leader** 仍用 PyPI。URDF / MeshCat 网格来自同级仓库 `Rebot_Arm_description`。
 
@@ -142,7 +142,7 @@ PY
 连接后、开始跟随时，程序会读 leader / follower 全部关节角。任一关节绝对值超过 **±10 deg**（`--zero-tolerance-deg`）：
 
 - **teleop**：打日志列出超差关节，**不退出**。follower 先保持当前姿态；**按回车**（或空格）后做 **3 秒**余弦过渡到当前 leader，和遥操里再按空格恢复相同。
-- **record / play**：直接退出，避免带着错误零位开力矩。
+- **gravity / record / play**：直接退出，避免带着错误零位开力矩。
 
 启动前请尽量把臂放到机械零位、夹爪闭合。调试才允许 `--skip-zero-check`。
 
@@ -176,7 +176,7 @@ python -m teleoperate_rs teleop --gripper-scale 3
 # macOS：把端口换成 ports 列出来的 cu.usb*
 python -m teleoperate_rs teleop \
   --leader-type rebot_arm_102_leader \
-  --leader-port /dev/cu.usbserial-1140 \
+  --leader-port /dev/cu.usbserial-1110 \
   --follower-type seeed_b601_rs_follower \
   --follower-port can0 \
   --gripper-scale 3
@@ -184,7 +184,25 @@ python -m teleoperate_rs teleop \
 
 只有一个 USB 串口时可以省略 `--leader-port`。102 或 RS 启动时不在零点附近，会先打超差日志，按回车后再 3 秒对齐，不会直接退出。
 
-## 5. 单臂录制 / 回放
+## 5. 单臂重力补偿（不录制）
+
+同一条 RS 臂当 leader：开 **demo 9 重力补偿** + **MeshCat**，手拖即可，**不写 npz**。需要同级 `reBotArm_control_py` 和 `Rebot_Arm_description`。周期日志只有 `t=`，关节角看浏览器。
+
+`Ctrl+C`：余弦回编码器零点（约 5s）再断开。
+
+```bash
+conda activate teleoperate-rs
+cd ~/teleoperate-rs
+# Linux 还需: sudo ip link set can0 up type can bitrate 1000000
+
+python -m teleoperate_rs gravity --gripper-scale 3
+# 或: ./scripts/gravity.sh --gripper-scale 3
+python -m teleoperate_rs gravity --no-meshcat
+```
+
+默认 leader：`seeed_b601_rs_leader` @ `can0`。`--gripper-scale` 与 record 对齐，本 demo 不驱动 follower，不影响力矩。
+
+## 6. 单臂录制 / 回放
 
 同一条臂：先当 leader 手拖录制（默认 **demo 9 重力补偿** + **MeshCat**），再当 follower 循环播放（同样开 MeshCat）。夹爪比例默认 3。需要同级 `reBotArm_control_py` 和 `Rebot_Arm_description`。周期日志只有 `t=` / `frames=` 或 `loop=` / `frame=`，关节角看浏览器，不打到终端。
 
@@ -208,7 +226,7 @@ python -m teleoperate_rs play --no-meshcat
 
 `--rate 0`（回放默认）表示使用文件里记录的频率。
 
-## 6. 常用参数
+## 7. 常用参数
 
 | 参数 | 默认 | 说明 |
 | --- | --- | --- |
@@ -216,13 +234,13 @@ python -m teleoperate_rs play --no-meshcat
 | `--follower-type` | `seeed_b601_rs_follower` | motorbridge RS follower |
 | `--leader-port` / `--follower-port` | `can0` / `can1` | 102 未指定时自动探测 USB 串口 |
 | `--gripper-scale` | `3` | 相对连接姿态的夹爪比例 |
-| `--gravity-compensation` | 开（仅 record / RS） | demo 9 MIT + Pinocchio `g(q)`；`--no-gravity-compensation` 关掉 |
-| `--meshcat` | 开（record / play） | 浏览器显示 `Rebot_Arm_description` URDF；`--no-meshcat` 关掉 |
+| `--gravity-compensation` | 开（仅 record / RS） | demo 9 MIT + Pinocchio `g(q)`；`--no-gravity-compensation` 关掉。`gravity` 子命令始终开 |
+| `--meshcat` | 开（gravity / record / play） | 浏览器显示 `Rebot_Arm_description` URDF；`--no-meshcat` 关掉 |
 | `--zero-tolerance-deg` | `10` | 零点核对容差 |
 | `--resume-duration` | `3` | 遥操恢复过渡时间（秒） |
 | `--approach-duration` | `2` | 回放每圈贴近起点的时间（秒） |
 
-## 7. 模块划分（方便后续改 demo）
+## 8. 模块划分（方便后续改 demo）
 
 ```
 teleoperate_rs/
@@ -231,7 +249,7 @@ teleoperate_rs/
   pose.py               关节 dict / LeRobot action 互转
   devices/factory.py    按类型构造 RS motorbridge / demo9 重力 leader / 102 PyPI
   devices/rs_arm.py     motorbridge RS 臂（遥操 leader MIT kp=0 / follower MIT）
-  devices/gravity_leader.py  record 用的 demo 9 GravityCompensation
+  devices/gravity_leader.py  gravity / record 用的 demo 9 GravityCompensation
   devices/control_py.py 查找同级 reBotArm_control_py
   viz.py                MeshCat URDF 显示
   devices/can.py        Linux SocketCAN / macOS PCAN（检查裸名 PCBUSB）
@@ -246,6 +264,7 @@ teleoperate_rs/
   motion/picker.py      方向键选文件
   motion/player.py      循环回放 + 起点过渡
   apps/teleop.py        双臂遥操
+  apps/gravity.py       单臂重力补偿（不录制）
   apps/record.py        单臂录制
   apps/play.py          单臂回放
   apps/ports.py         列出本机串口 / CAN

@@ -1,4 +1,4 @@
-"""CLI entry: python -m teleoperate_rs {teleop,record,play,ports}."""
+"""CLI entry: python -m teleoperate_rs {teleop,gravity,record,play,ports}."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ import logging
 import sys
 
 from teleoperate_rs.apps.common import (
+    add_gravity_flags,
     add_play_flags,
     add_record_flags,
     add_teleop_flags,
@@ -22,6 +23,12 @@ def _run_teleop(args: argparse.Namespace) -> int:
     from teleoperate_rs.apps.teleop import run_teleop
 
     return run_teleop(settings_from_args(args))
+
+
+def _run_gravity(args: argparse.Namespace) -> int:
+    from teleoperate_rs.apps.gravity import run_gravity
+
+    return run_gravity(settings_from_args(args))
 
 
 def _run_record(args: argparse.Namespace) -> int:
@@ -52,6 +59,10 @@ def build_parser() -> argparse.ArgumentParser:
     teleop = sub.add_parser("teleop", help="双臂遥操作（空格暂停，恢复 3s 对齐）")
     add_teleop_flags(teleop)
     teleop.set_defaults(func=_run_teleop)
+
+    gravity = sub.add_parser("gravity", help="单臂重力补偿（手拖，不录制）")
+    add_gravity_flags(gravity)
+    gravity.set_defaults(func=_run_gravity)
 
     record = sub.add_parser("record", help="单臂录制 leader 轨迹")
     add_record_flags(record)
