@@ -184,7 +184,23 @@ python -m teleoperate_rs teleop \
 
 只有一个 USB 串口时可以省略 `--leader-port`。102 或 RS 启动时不在零点附近，会先打超差日志，按回车后再 3 秒对齐，不会直接退出。
 
-## 5. 单臂重力补偿（不录制）
+## 5. 最短路径：重力补偿 → 30 Hz 录制 → 回放
+
+同一条 RS 臂 `can0`。三步都开 MeshCat。`record` 默认已开 demo 9 重力补偿；`play` 默认 `--rate 0`，按 npz 里的 **30 Hz** 循环。
+
+```bash
+conda activate teleoperate-rs
+cd ~/teleoperate-rs
+# Linux: sudo ip link set can0 up type can bitrate 1000000
+
+python -m teleoperate_rs gravity --rate 30   # 手拖试补偿，不写文件；Ctrl+C 回零
+python -m teleoperate_rs record --rate 30    # 手拖录制；Ctrl+C 存 npz 并回零
+python -m teleoperate_rs play                # 选刚录的文件，30 Hz 回放；Ctrl+C 回零
+```
+
+变体：`./scripts/gravity.sh --rate 30` → `./scripts/record.sh --rate 30` → `./scripts/play.sh`。
+
+## 6. 单臂重力补偿（不录制）
 
 同一条 RS 臂当 leader：开 **demo 9 重力补偿** + **MeshCat**，手拖即可，**不写 npz**。需要同级 `reBotArm_control_py` 和 `Rebot_Arm_description`。周期日志只有 `t=`，关节角看浏览器。
 
@@ -202,7 +218,7 @@ python -m teleoperate_rs gravity --no-meshcat
 
 默认 leader：`seeed_b601_rs_leader` @ `can0`。`--gripper-scale` 与 record 对齐，本 demo 不驱动 follower，不影响力矩。
 
-## 6. 单臂录制 / 回放
+## 7. 单臂录制 / 回放
 
 同一条臂：先当 leader 手拖录制（默认 **demo 9 重力补偿** + **MeshCat**），再当 follower 循环播放（同样开 MeshCat）。夹爪比例默认 3。需要同级 `reBotArm_control_py` 和 `Rebot_Arm_description`。周期日志只有 `t=` / `frames=` 或 `loop=` / `frame=`，关节角看浏览器，不打到终端。
 
@@ -224,15 +240,16 @@ python -m teleoperate_rs play --motion datasets/rs_motions/motion_20260820_12130
 python -m teleoperate_rs play --no-meshcat
 ```
 
-`--rate 0`（回放默认）表示使用文件里记录的频率。
+`--rate 0`（回放默认）表示使用文件里记录的频率。30 Hz 最短路径见第 5 节。
 
-## 7. 常用参数
+## 8. 常用参数
 
 | 参数 | 默认 | 说明 |
 | --- | --- | --- |
 | `--leader-type` | `seeed_b601_rs_leader` | RS 走 motorbridge；102 用 `rebot_arm_102_leader`（PyPI） |
 | `--follower-type` | `seeed_b601_rs_follower` | motorbridge RS follower |
 | `--leader-port` / `--follower-port` | `can0` / `can1` | 102 未指定时自动探测 USB 串口 |
+| `--rate` | teleop / gravity / record：`60`；play：`0` | 控制频率 Hz。play 为 0 时用 npz 里的频率 |
 | `--gripper-scale` | `3` | 相对连接姿态的夹爪比例 |
 | `--gravity-compensation` | 开（仅 record / RS） | demo 9 MIT + Pinocchio `g(q)`；`--no-gravity-compensation` 关掉。`gravity` 子命令始终开 |
 | `--meshcat` | 开（gravity / record / play） | 浏览器显示 `Rebot_Arm_description` URDF；`--no-meshcat` 关掉 |
@@ -240,7 +257,7 @@ python -m teleoperate_rs play --no-meshcat
 | `--resume-duration` | `3` | 遥操恢复过渡时间（秒） |
 | `--approach-duration` | `2` | 回放每圈贴近起点的时间（秒） |
 
-## 8. 模块划分（方便后续改 demo）
+## 9. 模块划分（方便后续改 demo）
 
 ```
 teleoperate_rs/
